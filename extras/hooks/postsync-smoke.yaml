@@ -1,0 +1,17 @@
+# Exercise 7. Runs after all resources are synced and healthy.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postsync-smoke
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: smoke
+          image: busybox:1.37
+          command: ["sh", "-c", "wget -qO- http://hello:9898/healthz && echo OK"]

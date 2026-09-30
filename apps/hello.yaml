@@ -1,0 +1,21 @@
+# Exercise 1-4. Plain YAML from a directory in this repo.
+# No syncPolicy.automated yet: you sync by hand first, then turn it on (exercise 3).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io # deleting the app deletes its resources
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/magnusgrande/argocd-lab.git
+    targetRevision: main
+    path: workloads/hello
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: lab-hello
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

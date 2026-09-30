@@ -1,0 +1,28 @@
+# Exercise 8. AppProject = the permission boundary for a group of apps:
+# which repos they may use, where they may deploy, which kinds they may create.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: lab
+  namespace: argocd
+spec:
+  description: Lab workloads - this repo only, lab-* namespaces only
+  sourceRepos:
+    - https://github.com/magnusgrande/argocd-lab.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "lab-*"
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+  roles:
+    # A token for this role can only sync/read apps in this project.
+    # `argocd proj role create-token lab deployer` -> use from CI.
+    - name: deployer
+      description: May sync lab apps, nothing else
+      policies:
+        - p, proj:lab:deployer, applications, get, lab/*, allow
+        - p, proj:lab:deployer, applications, sync, lab/*, allow

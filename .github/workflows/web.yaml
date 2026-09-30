@@ -1,0 +1,52 @@
+# CI half of the loop: build image -> push -> commit the new tag to Git.
+# The CD half is Argo CD noticing the commit. CI never gets cluster credentials.
+name: web - build and bump
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/web/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # push the tag-bump commit
+  packages: write # push to ghcr.io
+
+concurrency:
+  group: web-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Image name
+        id: img
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/argocd-lab-web" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: src/web
+          push: true
+          tags: ${{ steps.img.outputs.name }}:${{ github.sha }}
+          labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+      - name: Bump tag in Git (= deploy)
+        working-directory: workloads/web
+        run: |
+          kustomize edit set image web=${{ steps.img.outputs.name }}:${{ github.sha }}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -am "web: deploy ${GITHUB_SHA::7}"
+          git pull --rebase
+          git push
+        # Commits pushed with GITHUB_TOKEN don't trigger new workflow runs,
+        # and this one only touches workloads/, so there's no loop.

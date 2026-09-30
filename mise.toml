@@ -1,0 +1,15 @@
+[tools]
+kind = "latest"
+kubectl = "latest"
+helm = "latest"
+argocd = "latest"
+k9s = "latest"
+
+[env]
+KIND_EXPERIMENTAL_PROVIDER = "podman"
+CLUSTER_NAME = "argocd-lab"
+# Also pinned in extras/argocd-self.yaml (exercise 9) - keep in sync.
+ARGOCD_CHART_VERSION = "10.9.4"
+# Also hardcoded in bootstrap/ apps/ extras/ - change with `mise run set-repo`.
+REPO_URL = "https://github.com/magnusgrande/argocd-lab.git"
+# GITHUB_TOKEN goes in mise.local.toml (gitignored), only needed for a private repo.

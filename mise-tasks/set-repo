@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Replace the hardcoded repo URL with $REPO_URL in all manifests"
+set -euo pipefail
+default="https://github.com/magnusgrande/argocd-lab.git"
+[[ "$REPO_URL" == "$default" ]] && { echo "REPO_URL is already the default."; exit 0; }
+grep -rl "$default" bootstrap apps extras | while read -r f; do
+  sed -i "s#$default#$REPO_URL#g" "$f" && echo "updated $f"
+done

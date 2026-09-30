@@ -1,0 +1,36 @@
+# Exercise 6. One Application per folder in workloads/envs/overlays/*.
+# Add a folder -> new app + namespace appear. Delete it -> both are removed.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: envs
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/magnusgrande/argocd-lab.git
+        revision: main
+        directories:
+          - path: workloads/envs/overlays/*
+  template:
+    metadata:
+      name: "envs-{{ .path.basename }}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/magnusgrande/argocd-lab.git
+        targetRevision: main
+        path: "{{ .path.path }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "lab-{{ .path.basename }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - service.yaml
+# CI rewrites newTag on every build of src/web (see .github/workflows/web.yaml).
+# That commit IS the deployment.
+images:
+  - name: web
+    newName: ghcr.io/magnusgrande/argocd-lab-web
+    newTag: not-built-yet

@@ -1,0 +1,22 @@
+# Values for the argo-cd Helm chart. Used by `mise run up` (helm install)
+# and later by extras/argocd-self.yaml (Argo CD managing itself).
+global:
+  domain: localhost:18080
+
+configs:
+  params:
+    server.insecure: true # plain HTTP locally; TLS terminates elsewhere in real setups
+  cm:
+    timeout.reconciliation: 60s # how often Git is polled (default 180s). No webhooks to localhost.
+    exec.enabled: true # "Terminal" tab on pods in the UI
+
+server:
+  service:
+    type: NodePort
+    nodePortHttp: 30080
+
+dex:
+  enabled: false # no SSO in the lab; local admin only
+
+notifications:
+  enabled: false

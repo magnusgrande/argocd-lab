@@ -1,0 +1,23 @@
+# Exercise 10. The app CI deploys to - by committing a new image tag, not by talking to the cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/magnusgrande/argocd-lab.git
+    targetRevision: main
+    path: workloads/web
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: lab-web
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

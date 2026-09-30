@@ -1,0 +1,31 @@
+# Exercise 9. Argo CD manages its own install. After this, change Argo CD by
+# editing bootstrap/argocd-values.yaml and pushing - never `helm upgrade` again.
+# Multi-source: chart from the Helm repo, values file from this Git repo ($values).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  # No resources-finalizer: deleting this app must NOT uninstall Argo CD.
+spec:
+  project: default
+  sources:
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      targetRevision: 10.9.4 # keep in sync with ARGOCD_CHART_VERSION in mise.toml
+      helm:
+        releaseName: argocd # must match the name used by `helm install` to adopt resources
+        valueFiles:
+          - $values/bootstrap/argocd-values.yaml
+    - repoURL: https://github.com/magnusgrande/argocd-lab.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false # don't let a bad commit delete Argo CD's own components
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true # Argo CD's CRDs are too large for client-side apply

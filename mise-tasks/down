@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Delete the kind cluster"
+set -euo pipefail
+kind delete cluster --name "$CLUSTER_NAME"

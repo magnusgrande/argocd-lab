@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Log the argocd CLI in as admin"
+set -euo pipefail
+pw=$(kubectl --context "kind-$CLUSTER_NAME" -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath='{.data.password}' | base64 -d)
+argocd login localhost:18080 --username admin --password "$pw" --plaintext --grpc-web

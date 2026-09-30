@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#MISE description="Create kind cluster, install Argo CD with Helm, apply the root app"
+set -euo pipefail
+export MSYS_NO_PATHCONV=1 # Git Bash: don't rewrite /paths in args
+
+if kind get clusters 2>/dev/null | grep -qx "$CLUSTER_NAME"; then
+  echo "Cluster $CLUSTER_NAME exists, reusing it."
+else
+  kind create cluster --name "$CLUSTER_NAME" --config kind/cluster.yaml
+fi
+kubectl config use-context "kind-$CLUSTER_NAME" >/dev/null
+
+# --repo instead of `helm repo add`: no dependency on Helm's repo cache.
+helm upgrade --install argocd argo-cd \
+  --repo https://argoproj.github.io/argo-helm \
+  --version "$ARGOCD_CHART_VERSION" \
+  --namespace argocd --create-namespace \
+  --values bootstrap/argocd-values.yaml \
+  --wait --timeout 10m
+
+# Private repo only: register credentials as a labelled Secret (declarative, same as the UI does).
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  kubectl -n argocd create secret generic repo-argocd-lab \
+    --from-literal=type=git \
+    --from-literal=url="$REPO_URL" \
+    --from-literal=username=git \
+    --from-literal=password="$GITHUB_TOKEN" \
+    --dry-run=client -o yaml |
+    kubectl label --local -f - -o yaml argocd.argoproj.io/secret-type=repository |
+    kubectl apply -f -
+fi
+
+kubectl apply -f bootstrap/root.yaml
+
+echo
+echo "Argo CD UI: http://localhost:18080  (user: admin)"
+echo "Password:   mise run password"
